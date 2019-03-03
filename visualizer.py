@@ -7,35 +7,29 @@ from networktables import NetworkTables
 
 # Smart Dashboard things
 
-cond = threading.Condition()
-notified = [False]
+# cond = threading.Condition()
+# notified = [False]
 
-def connectionListener(connected, info):
-     print(info, '; Connected=%s' % connected)
-     with cond:
-        notified[0] = True
-        cond.notify()
+# def connectionListener(connected, info):
+#     print(info, '; Connected=%s' % connected)
+#     with cond:
+#         notified[0] = True
+#         cond.notify()
 
-NetworkTables.initialize(server='10.21.75.2')
-NetworkTables.addConnectionListener(connectionListener, immediateNotify = True)
+# NetworkTables.initialize(server='10.21.75.2')
+# NetworkTables.addConnectionListener(connectionListener, immediateNotify = True)
 
-with cond:
-    print("Waiting")
-    if not notified[0]:
-        cond.wait()
+# with cond:
+#     print("Waiting")
+#     if not notified[0]:
+#         cond.wait()
 
-print("Connected!")
-table = NetworkTables.getTable('SmartDashboard')
-valuesTable = table.getSubTable('Values')
+# print("Connected!")
+# table = NetworkTables.getTable('SmartDashboard')
+# valuesTable = table.getSubTable('Values')
 
-"""
-Things to do:
-1. Make path points update during the main loop so that we can see in real time with a vision target [have something... probably won't work & will have to look at]
-2. Add a few "buffer" gridlines beyond end of path for X & Y so the real robot never goes off the screen... [should be fixed]
-3. Change the Quadrant 1 & Quadrant 2 feature to scale correctly for both quadrants individually
-"""
+# Constants
 
-# Constants and variables
 FRAME_TIME = 20
 CANVAS_WIDTH = 800
 CANVAS_HEIGHT = 800
@@ -43,29 +37,42 @@ AXIS_WIDTH = 2
 AXIS_PADDING = 20
 EXAMPLE_DATA = [
     [0.0, 0.0],
-    [2.0, 1.5],
-    [4.0, 1.5]
+    [0.2886718180492783, 3.1578947368421053],
+    [1.1126986441172182, 6.315789473684211],
+    [2.409097536083977, 9.473684210526315],
+    [4.114885551829713, 12.631578947368421],
+    [6.167079749234581, 15.789473684210527],
+    [8.502697186178741, 18.94736842105263],
+    [11.058754920542352, 22.105263157894733],
+    [13.772270010205569, 25.263157894736842],
+    [16.580259513048546, 28.421052631578945],
+    [19.419740486951447, 31.578947368421055],
+    [22.227729989794426, 34.73684210526316],
+    [24.94124507945764, 37.89473684210526],
+    [27.497302813821264, 41.05263157894737],
+    [29.83292025076541, 44.210526315789465],
+    [31.8851144481703, 47.368421052631575],
+    [33.590902463916024, 50.526315789473685],
+    [34.88730135588278, 53.68421052631579],
+    [35.71132818195072, 56.84210526315789],
+    [36.0, 60.0]
 ]
-x_coords = []
-y_coords = []
+
+# Smart Dashboard data for the path
 PATH_POINTS = []
-X_SCALE = 0
-Y_SCALE = 0
-GRIDLINE_WIDTH = 0
-GRIDLINE_HEIGHT = 0
-QUADRANT_1 = False
-QUADRANT_2 = False
+# x_coords = valuesTable.getNumberArray("PathXCoords", [])
+# y_coords = valuesTable.getNumberArray("PathYCoords", [])
+# for i in range(min(len(x_coords), len(y_coords))):
+#     PATH_POINTS.append([x_coords[i], y_coords[i]])
 
-"""
-for point in EXAMPLE_DATA:
-    x_coords.append(point[0])
-    y_coords.append(point[1])
-"""
-
+X_SCALE = 36 
+Y_SCALE = 60
+GRIDLINE_WIDTH = (CANVAS_WIDTH - AXIS_PADDING) / X_SCALE
+GRIDLINE_HEIGHT = (CANVAS_HEIGHT - AXIS_PADDING) / Y_SCALE
 POINT_RADIUS = 5
 ROBOT_LINE_LENGTH = 100
 
-# Configure window
+# Connfigure window
 
 master = Tk()
 master.title("Visualizer")
@@ -73,85 +80,35 @@ w = Canvas(master, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
 w.pack(expand=YES, fill=BOTH)
 w.config(background="#FFFFFF")
 
-def generate_path(x_coords, y_coords):
-    QUADRANT_1 = False
-    QUADRANT_2 = False
-    for i in range(min(len(x_coords), len(y_coords))):
-        PATH_POINTS.append([x_coords[i], y_coords[i]])
-        X_SCALE = int(abs(max(x_coords, key=abs))) + 1
-        Y_SCALE = int(max(y_coords)) + 1
-    X_SCALE = int(X_SCALE * 1.20)
-    Y_SCALE = int(Y_SCALE * 1.20)
-    if(min(x_coords) < 0):
-        QUADRANT_2 = True
-    if(max(x_coords) > 0):
-        QUADRANT_1 = True
-    if(QUADRANT_1 and QUADRANT_2):
-        X_SCALE *= 2
-    GRIDLINE_WIDTH = (CANVAS_WIDTH - AXIS_PADDING) / X_SCALE
-    GRIDLINE_HEIGHT = (CANVAS_HEIGHT - AXIS_PADDING) / Y_SCALE
-
 def draw_axes():
     "Draws the axes on the window with specified padding in constants list"
+    w.create_line(AXIS_PADDING, 0, AXIS_PADDING, CANVAS_HEIGHT, width=AXIS_WIDTH)
     w.create_line(0, CANVAS_HEIGHT - AXIS_PADDING, CANVAS_WIDTH, CANVAS_HEIGHT - AXIS_PADDING, width=AXIS_WIDTH)
-    if(QUADRANT_1 and QUADRANT_2):
-        w.create_line(CANVAS_WIDTH / 2.0, 0, CANVAS_WIDTH / 2.0, CANVAS_HEIGHT, width=AXIS_WIDTH)
-    elif(QUADRANT_1):
-        w.create_line(AXIS_PADDING, 0, AXIS_PADDING, CANVAS_HEIGHT, width=AXIS_WIDTH)
-    else:
-        w.create_line(CANVAS_WIDTH - AXIS_PADDING, 0, CANVAS_WIDTH - AXIS_PADDING, CANVAS_HEIGHT, width=AXIS_WIDTH)
 
 def draw_grid():
     "Draws a grid with the space between gridlines being one graph unit"
+    offset = AXIS_PADDING + GRIDLINE_WIDTH
+    for i in range(0, X_SCALE):
+        w.create_line(offset, 0, offset, CANVAS_HEIGHT)
+        offset += GRIDLINE_WIDTH
     offset = (CANVAS_HEIGHT - AXIS_PADDING) - GRIDLINE_HEIGHT
     for i in range(0, Y_SCALE):
         w.create_line(0, offset, CANVAS_WIDTH, offset)
         offset -= GRIDLINE_HEIGHT
-    offset = AXIS_PADDING + GRIDLINE_WIDTH
-    if(QUADRANT_1 and QUADRANT_2):
-        offset = CANVAS_WIDTH / 2.0
-        offset2 = offset
-        for i in range(0, X_SCALE):
-            w.create_line(offset, 0, offset, CANVAS_HEIGHT)
-            offset += GRIDLINE_WIDTH
-            w.create_line(offset2, 0, offset2, CANVAS_HEIGHT)
-            offset2 -= GRIDLINE_WIDTH
-    elif(QUADRANT_1):
-        for i in range(0, X_SCALE):
-            w.create_line(offset, 0, offset, CANVAS_HEIGHT)
-            offset += GRIDLINE_WIDTH
-    else:
-        offset = 0
-        for i in range(0, X_SCALE):
-            w.create_line(offset, 0, offset, CANVAS_HEIGHT)
-            offset += GRIDLINE_WIDTH
-
-def plot_point(x, y, color):
+    
+def plot_point(x, y):
     "Plots a point on the graph with graph coordinates x and y"
+    x_coord = AXIS_PADDING + x * GRIDLINE_WIDTH
     y_coord = CANVAS_HEIGHT - (AXIS_PADDING + y * GRIDLINE_HEIGHT)
-    if(QUADRANT_1 and QUADRANT_2):
-        x_coord = (CANVAS_WIDTH / 2) + x * GRIDLINE_WIDTH
-    elif(QUADRANT_1):
-        x_coord = AXIS_PADDING + x * GRIDLINE_WIDTH
-    else:
-        x_coord = (CANVAS_WIDTH - AXIS_PADDING) + x * GRIDLINE_WIDTH
-    w.create_oval(x_coord + POINT_RADIUS, y_coord + POINT_RADIUS, x_coord - POINT_RADIUS, y_coord - POINT_RADIUS, fill=color)
+    w.create_oval(x_coord + POINT_RADIUS, y_coord + POINT_RADIUS, x_coord - POINT_RADIUS, y_coord - POINT_RADIUS, fill="#000000")
 
 def plot_data(data):
     "Plots the data specified, where data is a list of length-two number lists (a list of points)"
     for point in data:
-        plot_point(point[0], point[1], "#000000")
+        plot_point(point[0], point[1])
 
-robotxcoords = []
-robotycoords = []
-
-def draw_robot(robotx, roboty, robotzRotation, autoEnabled):
+def draw_robot(robotx, roboty, robotzRotation):
     "Draw two intersecting lines at robotx and roboty with a rotation of robotzRotation degrees"
-    if(autoEnabled == True):
-        robotxcoords.append(robotx)
-        robotycoords.append(roboty)
-        for i in range(min(len(robotxcoords), len(robotycoords))):
-            plot_point(robotxcoords[i], robotycoords[i],  "#fbff14")
     robotx = AXIS_PADDING + robotx * GRIDLINE_WIDTH
     roboty = CANVAS_HEIGHT - (AXIS_PADDING + roboty * GRIDLINE_HEIGHT)
     x1 = robotx + 0.5 * ROBOT_LINE_LENGTH * sin(radians(robotzRotation))
@@ -168,12 +125,11 @@ def draw_robot(robotx, roboty, robotzRotation, autoEnabled):
 def draw():
     "Draws all of the components on the screen and calls itself recursively"
     w.delete('all')
-    generate_path(valuesTable.getNumberArray("PathXCoords", []), y_coords = valuesTable.getNumberArray("PathYCoords", []))
     draw_axes()
     draw_grid()
-    plot_data(PATH_POINTS)
+    plot_data(EXAMPLE_DATA)
     # Smart Dashboard stuff that draws the position and rotation of the robot
-    draw_robot(valuesTable.getNumber("PositionX", 0), valuesTable.getNumber("PositionY", 0), valuesTable.getNumber("Gyro", 0), valuesTable.getBoolean("AutonomousEnabled", False))
+    # draw_robot(valuesTable.getNumber("PositionX", 0), valuesTable.getNumber("PositionY", 0), valuesTable.getNumber("Gyro", 0))
     master.after(FRAME_TIME, draw)
 
 master.after(FRAME_TIME, draw)
