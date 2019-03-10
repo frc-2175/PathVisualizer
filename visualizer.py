@@ -27,7 +27,8 @@ with cond:
 print("Connected!")
 table = NetworkTables.getTable('SmartDashboard')
 valuesTable = table.getSubTable('Values')
-visionTable = table.getSubTable('AutoPopulate').getSubTable('Vision')
+autoPopulateTable = table.getSubTable('AutoPopulate')
+visionTable = autoPopulateTable.getSubTable('Vision')
 bezierTable = table.getSubTable('Bezier')
 purePursuitTable = table.getSubTable('PurePursuitLogging')
 
@@ -88,9 +89,9 @@ largest_y_val = max(y_coords)
 #     X_SCALE_MAX = largest_x_val * BUFFER
 # else:
 #     X_SCALE_MAX = DEFAULT_X_SCALE
-X_SCALE_MAX = 45
-X_SCALE_MIN = -45
-Y_SCALE_MAX = 90
+X_SCALE_MAX = 60
+X_SCALE_MIN = -60
+Y_SCALE_MAX = 120
 Y_SCALE_MIN = -3
 GRIDLINE_WIDTH = CANVAS_WIDTH / (X_SCALE_MAX - X_SCALE_MIN)
 GRIDLINE_HEIGHT = CANVAS_HEIGHT / (Y_SCALE_MAX - Y_SCALE_MIN)
@@ -117,13 +118,13 @@ def draw_axes():
 def draw_grid():
     "Draws a grid with the space between gridlines being one graph unit"
     for i in range(0, floor(X_SCALE_MAX)):
-        w.create_line(Y_AXIS_POSITION + (i + 1) * GRIDLINE_WIDTH, 0, Y_AXIS_POSITION + (i + 1) * GRIDLINE_WIDTH, CANVAS_HEIGHT)
+        w.create_line(Y_AXIS_POSITION + (i + 1) * GRIDLINE_WIDTH, 0, Y_AXIS_POSITION + (i + 1) * GRIDLINE_WIDTH, CANVAS_HEIGHT, fill="#e8e8e8")
     for i in range(0, floor(abs(X_SCALE_MIN))):
-        w.create_line(Y_AXIS_POSITION - (i + 1) * GRIDLINE_WIDTH, 0, Y_AXIS_POSITION - (i + 1) * GRIDLINE_WIDTH, CANVAS_HEIGHT)
+        w.create_line(Y_AXIS_POSITION - (i + 1) * GRIDLINE_WIDTH, 0, Y_AXIS_POSITION - (i + 1) * GRIDLINE_WIDTH, CANVAS_HEIGHT, fill="#e8e8e8")
     for i in range(0, floor(Y_SCALE_MAX)):
-        w.create_line(0, X_AXIS_POSITION - (i + 1) * GRIDLINE_HEIGHT, CANVAS_WIDTH, X_AXIS_POSITION - (i + 1) * GRIDLINE_HEIGHT)
+        w.create_line(0, X_AXIS_POSITION - (i + 1) * GRIDLINE_HEIGHT, CANVAS_WIDTH, X_AXIS_POSITION - (i + 1) * GRIDLINE_HEIGHT, fill="#e8e8e8")
     for i in range(0, floor(abs(Y_SCALE_MIN))):
-        w.create_line(0, X_AXIS_POSITION + (i + 1) * GRIDLINE_HEIGHT, CANVAS_WIDTH, X_AXIS_POSITION + (i + 1) * GRIDLINE_HEIGHT)
+        w.create_line(0, X_AXIS_POSITION + (i + 1) * GRIDLINE_HEIGHT, CANVAS_WIDTH, X_AXIS_POSITION + (i + 1) * GRIDLINE_HEIGHT, fill="#e8e8e8")
 
 def plot_point(x, y, color="#000000"):
     "Plots a point on the graph with graph coordinates x and y"
@@ -186,7 +187,7 @@ def draw():
     draw_grid()
     plot_data(PATH_DATA)
     # Smart Dashboard stuff that draws the position and rotation of the robot
-    draw_robot(valuesTable.getNumber("PositionX", 0), valuesTable.getNumber("PositionY", 0), valuesTable.getNumber("Gyro", 0))
+    draw_robot(valuesTable.getNumber("PositionX", 0), valuesTable.getNumber("PositionY", 0), autoPopulateTable.getNumber("Gyro", 0))
 
     # Draw positions of target corners
     plot_point(visionTable.getNumber("LeftCornerX", 0), visionTable.getNumber("LeftCornerY", 0), '#0000FF')
