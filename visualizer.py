@@ -33,77 +33,22 @@ bezierTable = table.getSubTable('Bezier')
 purePursuitTable = table.getSubTable('PurePursuitLogging')
 
 # Constants
-
 FRAME_TIME = 20
-CANVAS_WIDTH = 1000
-CANVAS_HEIGHT = 1000
+CANVAS_WIDTH = 700
+CANVAS_HEIGHT = 700
 AXIS_WIDTH = 2
-AXIS_PADDING = 20
-PATH_DATA = [
-    [0.0, 0.0],
-    [0.2886718180492783, 3.1578947368421053],
-    [1.1126986441172182, 6.315789473684211],
-    [2.409097536083977, 9.473684210526315],
-    [4.114885551829713, 12.631578947368421],
-    [6.167079749234581, 15.789473684210527],
-    [8.502697186178741, 18.94736842105263],
-    [11.058754920542352, 22.105263157894733],
-    [13.772270010205569, 25.263157894736842],
-    [16.580259513048546, 28.421052631578945],
-    [19.419740486951447, 31.578947368421055],
-    [22.227729989794426, 34.73684210526316],
-    [24.94124507945764, 37.89473684210526],
-    [27.497302813821264, 41.05263157894737],
-    [29.83292025076541, 44.210526315789465],
-    [31.8851144481703, 47.368421052631575],
-    [33.590902463916024, 50.526315789473685],
-    [34.88730135588278, 53.68421052631579],
-    [35.71132818195072, 56.84210526315789],
-    [36.0, 60.0],
-    [-20, 4]
-]
-
-# Smart Dashboard data for the path
-PATH_DATA = []
-x_coords = valuesTable.getNumberArray("PathXCoords", [])
-y_coords = valuesTable.getNumberArray("PathYCoords", [])
-for i in range(min(len(x_coords), len(y_coords))):
-    PATH_DATA.append([x_coords[i], y_coords[i]])
-
-BUFFER = 1.15
-DEFAULT_X_SCALE = 3.0
-
-x_coords = []
-y_coords = []
-for i in PATH_DATA:
-    x_coords.append(i[0])
-    y_coords.append(i[1])
-smallest_x_val = min(x_coords)
-largest_x_val = max(x_coords)
-largest_y_val = max(y_coords)
-# if smallest_x_val < 0:
-#     X_SCALE_MIN = smallest_x_val * BUFFER
-# else:
-#     X_SCALE_MIN = -DEFAULT_X_SCALE
-# if largest_x_val > 0:
-#     X_SCALE_MAX = largest_x_val * BUFFER
-# else:
-#     X_SCALE_MAX = DEFAULT_X_SCALE
-X_SCALE_MAX = 60
-X_SCALE_MIN = -60
-Y_SCALE_MAX = 120
-Y_SCALE_MIN = -3
+X_SCALE_MIN = -48
+X_SCALE_MAX = 48
+Y_SCALE_MIN = -48
+Y_SCALE_MAX = 48
 GRIDLINE_WIDTH = CANVAS_WIDTH / (X_SCALE_MAX - X_SCALE_MIN)
 GRIDLINE_HEIGHT = CANVAS_HEIGHT / (Y_SCALE_MAX - Y_SCALE_MIN)
 X_AXIS_POSITION = Y_SCALE_MAX * GRIDLINE_HEIGHT
 Y_AXIS_POSITION = abs(X_SCALE_MIN) * GRIDLINE_WIDTH
 POINT_RADIUS = 5
 ROBOT_LINE_LENGTH = 100
-robot_position_x = 0
-robot_position_y = 0
 
-# Connfigure window
-
+# Configure window
 master = Tk()
 master.title("Visualizer")
 w = Canvas(master, width=CANVAS_WIDTH, height=CANVAS_HEIGHT)
@@ -174,8 +119,6 @@ def pixels_to_graph(pixelx, pixely):
 
 def draw():
     "Draws all of the components on the screen and calls itself recursively"
-    global robot_position_x
-    global robot_position_y
     global GRIDLINE_WIDTH, GRIDLINE_HEIGHT, X_AXIS_POSITION, Y_AXIS_POSITION
     w.delete('all')
     PATH_DATA = []
@@ -187,7 +130,7 @@ def draw():
     draw_grid()
     plot_data(PATH_DATA)
     # Smart Dashboard stuff that draws the position and rotation of the robot
-    draw_robot(valuesTable.getNumber("PositionX", 0), valuesTable.getNumber("PositionY", 0), autoPopulateTable.getNumber("Gyro", 0))
+    draw_robot(valuesTable.getNumber("PositionX", 0), valuesTable.getNumber("PositionY", 0), valuesTable.getNumber("Gyro", 0))
 
     # Draw positions of target corners
     plot_point(visionTable.getNumber("LeftCornerX", 0), visionTable.getNumber("LeftCornerY", 0), '#0000FF')
